@@ -8,6 +8,6 @@ public class HelloController {
 
     @GetMapping("/hello")
     public String hello() {
-        return "Merhaba Reis, Branch üzerinden güncellendi!";
+        return "Merhaba Reis, Branch üzerinden sourcetree ile pr için güncellendi!";
     }
 }
