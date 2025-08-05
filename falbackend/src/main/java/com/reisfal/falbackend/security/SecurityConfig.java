@@ -24,14 +24,27 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .cors(cors -> {}) // CorsConfig devrede
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/register", "/auth/login", "/register", "/login", "/uploads/**").permitAll()
+                        .requestMatchers(
+                                "/auth/register",
+                                "/auth/login",
+                                "/auth/refresh",
+                                "/uploads/**"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
-
-
-
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                // Form login ve HTTP Basic’i kapatıyoruz
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable())
+                // Bazı header kısıtlamalarını kaldırıyoruz (opsiyonel)
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.disable())
+                        .xssProtection(xss -> xss.disable())
+                        .contentTypeOptions(content -> content.disable())
+                );
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

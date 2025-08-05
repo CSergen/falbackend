@@ -2,10 +2,9 @@ package com.reisfal.falbackend.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.reisfal.falbackend.client.GeminiClient;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -17,11 +16,11 @@ public class AiService {
     @Value("${gemini.api.key}")
     private String geminiApiKey;
 
-    private final RestTemplate restTemplate;
+    private final GeminiClient geminiClient;
     private final ObjectMapper objectMapper;
 
-    public AiService() {
-        this.restTemplate = new RestTemplate();
+    public AiService(GeminiClient geminiClient) {
+        this.geminiClient = geminiClient;
         this.objectMapper = new ObjectMapper();
     }
 
@@ -30,26 +29,20 @@ public class AiService {
         String base64Image = Base64.getEncoder().encodeToString(imageBytes);
 
         String prompt = String.format(
-                "Sen deneyimli, yaşlı bilge ve bir o kadar da gizemli bir kahve falcısısın. Fotoğrafı dikkatle incele ve yalnızca kahve fincanı görseli varsa fal yorumu yap. " +
+                "Sen deneyimli bir kahve falcısısın. Fotoğrafı dikkatle incele ve yalnızca kahve falına uygun bir fincan veya telve varsa fal yorumu yap. " +
                         "Eğer fotoğraf kahve falına uygun değilse, net bir şekilde şu cevabı ver: 'Bu fotoğraf kahve falına uygun değil, fal yorumu yapılamaz.' " +
                         "Eğer kahve falına uygunsa, '%s' kategorisine odaklanarak güçlü, kendine güvenen, falcı tarzında bir yorum yap. " +
-                        "Kullanacağın ifadeleri ve kelimeleri internetten kahve falına uygun şekillerde seç ve unutma ki her seferinde farklı bir fal bakman gerekiyor."+
-                        "Kesin ifadeler kullan ama belirsiz ol geleceğe dair umut verici veya korkutucu tahminlerde bulun bu tahminler duruma göre yorumlanabilir olmalı 'Yakın zamanda...', 'Kaderinizde...', 'Büyük bir değişim...', 'Şans ve bereket geliyor...' gibi etkileyici, manipülatif bir dil kullan. " +
+                        "Kesin ifadeler kullan, belirsizlikten bahsetme. 'Yakın zamanda...', 'Kaderinizde...', 'Büyük bir değişim...', 'Şans ve bereket geliyor...' gibi etkileyici, manipülatif bir dil kullan. " +
                         "Sadece '%s' kategorisinden bahset, diğer konulara girme.",
                 category, category
         );
-
-
-
 
         String requestBody = """
         {
           "contents": [
             {
               "parts": [
-                {
-                  "text": "%s"
-                },
+                { "text": "%s" },
                 {
                   "inline_data": {
                     "mime_type": "image/png",
@@ -62,19 +55,8 @@ public class AiService {
         }
         """.formatted(prompt, base64Image);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-
-        ResponseEntity<String> response = restTemplate.exchange(
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + geminiApiKey,
-                HttpMethod.POST,
-                entity,
-                String.class
-        );
-
-        return extractTextFromGeminiResponse(response.getBody());
+        String response = geminiClient.generateContent(geminiApiKey, requestBody);
+        return extractTextFromGeminiResponse(response);
     }
 
     private String extractTextFromGeminiResponse(String jsonResponse) {
