@@ -2,6 +2,7 @@ package com.reisfal.falbackend.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
@@ -10,15 +11,35 @@ import java.util.Date;
 @Component
 public class JwtTokenProvider {
 
-    // Sabit secret key (en az 32 karakter olmalı)
-    private final String secret = "BuCokGucluBirAnahtarEnAz32KarakterUzunlugunda";
-    private final Key key = Keys.hmacShaKeyFor(secret.getBytes());
+    private final Key key;
+    private final long accessTokenValidity;
+    private final long refreshTokenValidity;
 
-    private final long validityInMilliseconds = 3600000; // 1 saat
+    public JwtTokenProvider(
+            @Value("${jwt.secret}") String secret,
+            @Value("${jwt.access.expiration}") long accessTokenValidity,
+            @Value("${jwt.refresh.expiration}") long refreshTokenValidity
+    ) {
+        this.key = Keys.hmacShaKeyFor(secret.getBytes());
+        this.accessTokenValidity = accessTokenValidity;
+        this.refreshTokenValidity = refreshTokenValidity;
+    }
 
-    public String createToken(String username) {
+    public String createAccessToken(String username) {
         Date now = new Date();
-        Date validity = new Date(now.getTime() + validityInMilliseconds);
+        Date validity = new Date(now.getTime() + accessTokenValidity);
+
+        return Jwts.builder()
+                .setSubject(username)
+                .setIssuedAt(now)
+                .setExpiration(validity)
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public String createRefreshToken(String username) {
+        Date now = new Date();
+        Date validity = new Date(now.getTime() + refreshTokenValidity);
 
         return Jwts.builder()
                 .setSubject(username)

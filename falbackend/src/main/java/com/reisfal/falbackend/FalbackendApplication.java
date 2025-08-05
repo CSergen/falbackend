@@ -2,8 +2,10 @@ package com.reisfal.falbackend;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @SpringBootApplication
+@EnableFeignClients
 public class FalbackendApplication {
 
 	public static void main(String[] args) {
