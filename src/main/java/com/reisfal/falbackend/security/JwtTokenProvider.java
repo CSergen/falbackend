@@ -37,17 +37,7 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public String createRefreshToken(String username) {
-        Date now = new Date();
-        Date validity = new Date(now.getTime() + refreshTokenValidity);
 
-        return Jwts.builder()
-                .setSubject(username)
-                .setIssuedAt(now)
-                .setExpiration(validity)
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
-    }
 
     public String getUsername(String token) {
         return Jwts.parserBuilder()

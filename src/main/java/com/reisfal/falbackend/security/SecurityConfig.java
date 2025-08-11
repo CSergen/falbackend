@@ -32,9 +32,11 @@ public class SecurityConfig {
                                 "/auth/register",
                                 "/auth/login",
                                 "/auth/refresh",
-                                "/uploads/**"
+                                "/uploads/**",
+                                "/hello" // istersen
                         ).permitAll()
                         .anyRequest().authenticated()
+
                 )
                 // Form login ve HTTP Basic’i kapatıyoruz
                 .formLogin(form -> form.disable())

@@ -1,25 +1,15 @@
 package com.reisfal.falbackend.model.dto;
 
 public class LoginRequest {
-    private String username;
-    private String email;
+    private String identifier;
     private String password;
 
-    // Getter ve Setter'lar
-    public String getUsername() {
-        return username;
+    public String getIdentifier() {
+        return identifier;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
+    public void setIdentifier(String identifier) {
+        this.identifier = identifier;
     }
 
     public String getPassword() {
