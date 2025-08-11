@@ -37,6 +37,7 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+<<<<<<< HEAD
     public String createRefreshToken(String username) {
         Date now = new Date();
         Date validity = new Date(now.getTime() + refreshTokenValidity);
@@ -48,6 +49,9 @@ public class JwtTokenProvider {
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
+=======
+
+>>>>>>> recover-2157
 
     public String getUsername(String token) {
         return Jwts.parserBuilder()

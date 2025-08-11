@@ -32,9 +32,17 @@ public class SecurityConfig {
                                 "/auth/register",
                                 "/auth/login",
                                 "/auth/refresh",
+<<<<<<< HEAD
                                 "/uploads/**"
                         ).permitAll()
                         .anyRequest().authenticated()
+=======
+                                "/uploads/**",
+                                "/hello" // istersen
+                        ).permitAll()
+                        .anyRequest().authenticated()
+
+>>>>>>> recover-2157
                 )
                 // Form login ve HTTP Basic’i kapatıyoruz
                 .formLogin(form -> form.disable())

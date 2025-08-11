@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 HELP.md
 target/
 .mvn/wrapper/maven-wrapper.jar
@@ -31,3 +32,18 @@ build/
 
 ### VS Code ###
 .vscode/
+=======
+﻿target/
+.idea/
+.project
+.classpath
+.settings/
+.vscode/
+*.iml
+.DS_Store
+.env
+uploads/
+src/main/resources/application-local.properties
+>>>>>>> recover-2157
+.idea/
+.idea/

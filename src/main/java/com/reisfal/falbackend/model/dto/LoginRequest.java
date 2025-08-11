@@ -1,6 +1,7 @@
 package com.reisfal.falbackend.model.dto;
 
 public class LoginRequest {
+<<<<<<< HEAD
     private String username;
     private String email;
     private String password;
@@ -20,6 +21,17 @@ public class LoginRequest {
 
     public void setEmail(String email) {
         this.email = email;
+=======
+    private String identifier;
+    private String password;
+
+    public String getIdentifier() {
+        return identifier;
+    }
+
+    public void setIdentifier(String identifier) {
+        this.identifier = identifier;
+>>>>>>> recover-2157
     }
 
     public String getPassword() {

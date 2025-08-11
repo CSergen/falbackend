@@ -9,7 +9,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
     boolean existsByUsername(String username);
     Optional<User> findByEmail(String email);
+<<<<<<< HEAD
 
 }
 
 
+=======
+    Optional<User> findByUsernameOrEmail(String username, String email);
+
+    // 🔽 ekle (email'i case-insensitive aramak için)
+    Optional<User> findByEmailIgnoreCase(String email);
+}
+>>>>>>> recover-2157
