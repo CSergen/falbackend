@@ -19,25 +19,14 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByUsername(username)
-<<<<<<< HEAD
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
-
-        return org.springframework.security.core.userdetails.User
-                .withUsername(user.getUsername())
-=======
                 .or(() -> userRepository.findByEmail(username)) // 🔥 bu satır eklendi
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getUsername()) // dikkat! yine user.getUsername() kullanıyoruz (token için)
->>>>>>> recover-2157
                 .password(user.getPassword())
                 .roles("USER")
                 .build();
     }
-<<<<<<< HEAD
-}
-=======
 
 }
->>>>>>> recover-2157

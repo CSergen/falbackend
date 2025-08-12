@@ -6,15 +6,9 @@ import com.reisfal.falbackend.client.GeminiClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-<<<<<<< HEAD
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Base64;
-=======
 import java.util.Base64;
 import java.util.Locale;
 import java.util.Map;
->>>>>>> recover-2157
 
 @Service
 public class AiService {
@@ -30,42 +24,36 @@ public class AiService {
         this.objectMapper = new ObjectMapper();
     }
 
-<<<<<<< HEAD
-    public String analyzeImage(String imagePath, String category) throws Exception {
-        byte[] imageBytes = Files.readAllBytes(Path.of(imagePath));
-        String base64Image = Base64.getEncoder().encodeToString(imageBytes);
-
-        String prompt = String.format(
-                "Sen deneyimli bir kahve falcısısın. Fotoğrafı dikkatle incele ve yalnızca kahve falına uygun bir fincan veya telve varsa fal yorumu yap. " +
-                        "Eğer fotoğraf kahve falına uygun değilse, net bir şekilde şu cevabı ver: 'Bu fotoğraf kahve falına uygun değil, fal yorumu yapılamaz.' " +
-                        "Eğer kahve falına uygunsa, '%s' kategorisine odaklanarak güçlü, kendine güvenen, falcı tarzında bir yorum yap. " +
-                        "Kesin ifadeler kullan, belirsizlikten bahsetme. 'Yakın zamanda...', 'Kaderinizde...', 'Büyük bir değişim...', 'Şans ve bereket geliyor...' gibi etkileyici, manipülatif bir dil kullan. " +
-                        "Sadece '%s' kategorisinden bahset, diğer konulara girme.",
-                category, category
-        );
-=======
     /**
-     * Base64 string -> byte[] -> analyze
+     * Base64 → byte[] → analyze
      */
     public String analyzeBase64Image(String base64Image, String category) throws Exception {
-        byte[] imageBytes = Base64.getDecoder().decode(base64Image);
+        if (base64Image == null || base64Image.isBlank()) {
+            throw new IllegalArgumentException("Boş base64 görsel");
+        }
+        // data URL geldiyse ayıkla
+        String clean = base64Image.contains(",")
+                ? base64Image.substring(base64Image.indexOf(',') + 1)
+                : base64Image;
+
+        byte[] imageBytes = Base64.getDecoder().decode(clean);
         return analyzeImage(imageBytes, category);
     }
 
     /**
      * Ana çağrı: Görsel + kategoriye göre uygun prompt ile Gemini'yi çağırır.
-     * category: "1..6" ya da "kahve/el/tarot/astroloji/ask/genel" gibi isimler kabul edilir.
+     * category: "1..6" ya da "kahve/el/tarot/astroloji/ask/genel" kabul edilir.
      */
     public String analyzeImage(byte[] imageBytes, String category) throws Exception {
+        if (imageBytes == null || imageBytes.length == 0) {
+            throw new IllegalArgumentException("Boş görsel");
+        }
+
+        String mime = detectMimeType(imageBytes);
         String base64 = Base64.getEncoder().encodeToString(imageBytes);
 
         String prompt = resolvePrompt(category);
-        // JSON string içinde kaçışları güvene al
-        String safePrompt = prompt
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n");
->>>>>>> recover-2157
+        String safePrompt = escapeForJson(prompt);
 
         String requestBody = """
         {
@@ -75,7 +63,7 @@ public class AiService {
                 { "text": "%s" },
                 {
                   "inline_data": {
-                    "mime_type": "image/png",
+                    "mime_type": "%s",
                     "data": "%s"
                   }
                 }
@@ -83,49 +71,80 @@ public class AiService {
             }
           ]
         }
-<<<<<<< HEAD
-        """.formatted(prompt, base64Image);
-=======
-        """.formatted(safePrompt, base64);
->>>>>>> recover-2157
+        """.formatted(safePrompt, mime, base64);
 
         String response = geminiClient.generateContent(geminiApiKey, requestBody);
         return extractTextFromGeminiResponse(response);
     }
 
-<<<<<<< HEAD
-    private String extractTextFromGeminiResponse(String jsonResponse) {
-        try {
-            JsonNode root = objectMapper.readTree(jsonResponse);
-            return root.path("candidates").get(0).path("content").path("parts").get(0).path("text").asText();
-=======
     /**
-     * Gemini cevabından metni çeker.
+     * Gemini cevabından metni çeker; boşsa anlamlı fallback döner.
      */
     private String extractTextFromGeminiResponse(String jsonResponse) {
         try {
             JsonNode root = objectMapper.readTree(jsonResponse);
-            JsonNode parts = root.path("candidates").get(0).path("content").path("parts");
-            if (parts.isArray() && parts.size() > 0) {
-                return parts.get(0).path("text").asText();
+
+            // Hata mesajı varsa önce onu kontrol et
+            JsonNode error = root.path("error");
+            if (!error.isMissingNode()) {
+                String msg = error.path("message").asText("");
+                if (!msg.isBlank()) {
+                    return "AI hatası: " + msg;
+                }
+            }
+
+            // Normal yol
+            JsonNode candidates = root.path("candidates");
+            if (candidates.isArray() && candidates.size() > 0) {
+                JsonNode parts = candidates.get(0).path("content").path("parts");
+                if (parts.isArray() && parts.size() > 0) {
+                    String text = parts.get(0).path("text").asText("");
+                    if (!text.isBlank()) return text;
+                }
             }
             return "AI yorumu alınamadı.";
->>>>>>> recover-2157
         } catch (Exception e) {
             return "AI yorumu alınamadı.";
         }
     }
-<<<<<<< HEAD
-=======
-
-    // -------------------- Prompt Seçici --------------------
 
     /**
-     * 6 kategori desteği: Kahve, El, Tarot, Astroloji, Aşk, Genel (fotoğraf ne olursa olsun)
-     * category "1..6" olabilir; ya da isim/etiket girilebilir (case-insensitive).
+     * Minimal, hızlı MIME tespiti (JPEG/PNG). Bilinmiyorsa jpeg’e düşer.
      */
+    private String detectMimeType(byte[] bytes) {
+        // JPEG: FF D8 FF
+        if (bytes.length > 3
+                && (bytes[0] & 0xFF) == 0xFF
+                && (bytes[1] & 0xFF) == 0xD8
+                && (bytes[2] & 0xFF) == 0xFF) {
+            return "image/jpeg";
+        }
+        // PNG: 89 50 4E 47 0D 0A 1A 0A
+        if (bytes.length > 8
+                && (bytes[0] & 0xFF) == 0x89
+                && (bytes[1] & 0xFF) == 0x50
+                && (bytes[2] & 0xFF) == 0x4E
+                && (bytes[3] & 0xFF) == 0x47) {
+            return "image/png";
+        }
+        // (İstersen WEBP / GIF desteği de eklenir.)
+        return "image/jpeg";
+    }
+
+    /**
+     * JSON string içinde güvenli kaçış.
+     */
+    private String escapeForJson(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
+    }
+
+    // -------------------- Prompt Seçici --------------------
     private String resolvePrompt(String categoryRaw) {
-        // normalize
         String key = (categoryRaw == null ? "" : categoryRaw.trim().toLowerCase(Locale.ROOT));
 
         // sayısal ID -> isim
@@ -134,22 +153,20 @@ public class AiService {
             case "2": key = "el"; break;
             case "3": key = "tarot"; break;
             case "4": key = "astroloji"; break;
-            case "5": key = "ask"; break;   // aşk'ı normalize edeceğiz
+            case "5": key = "ask"; break;      // "aşk" normalize ediliyor
             case "6": key = "genel"; break;
-            default:  // isimle gelmişse normalize etmeye devam
-                break;
+            default:  // isim gelmişse devam
         }
 
-        // Türkçe karakterleri normalize et
+        // Türkçe karakter normalizasyonu
         key = key.replace('ı','i').replace('ş','s').replace('ğ','g')
                 .replace('ö','o').replace('ü','u').replace('ç','c');
 
-        // --- SADECE TAM EŞLEŞME / güvenli eşleşme ---
         if (key.equals("kahve"))            key = "kahve";
         else if (key.equals("el"))          key = "el";
         else if (key.equals("tarot"))       key = "tarot";
         else if (key.equals("astroloji") || key.startsWith("astro")) key = "astroloji";
-        else if (key.equals("ask"))         key = "ask";      // "aşk" -> "ask" oldu
+        else if (key.equals("ask"))         key = "ask";
         else if (key.equals("genel") || key.startsWith("gen")) key = "genel";
         else key = "genel"; // fallback
 
@@ -170,6 +187,4 @@ public class AiService {
 
         return PROMPTS.getOrDefault(key, PROMPTS.get("genel"));
     }
-
->>>>>>> recover-2157
 }

@@ -5,9 +5,11 @@ services:
     image: postgres:15
     container_name: faldb_container
     environment:
-      POSTGRES_DB: faldb
-      POSTGRES_USER: sergen
-      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: ${SPRING_DATASOURCE_DB:-faldb}
+      POSTGRES_USER: ${SPRING_DATASOURCE_USERNAME}
+      POSTGRES_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      TZ: Europe/Istanbul
+      PGTZ: Europe/Istanbul
     ports:
       - "5432:5432"
     volumes:
@@ -15,20 +17,37 @@ services:
     networks:
       - fal_network
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SPRING_DATASOURCE_USERNAME} -d ${SPRING_DATASOURCE_DB:-faldb}"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+      start_period: 10s
 
   backend:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: falbackend_container
+    depends_on:
+      postgres:
+        condition: service_healthy
     ports:
       - "8080:8080"
-    depends_on:
-      - postgres
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/faldb
-      SPRING_DATASOURCE_USERNAME: sergen
-      SPRING_DATASOURCE_PASSWORD: 1234
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_EXP_MS: ${JWT_ACCESS_EXP_MS}
+      JWT_REFRESH_EXP_MS: ${JWT_REFRESH_EXP_MS}
+
+      APP_UPLOAD_DIR: ${APP_UPLOAD_DIR}
+      MAX_FILE_SIZE: ${MAX_FILE_SIZE}
+      MAX_REQUEST_SIZE: ${MAX_REQUEST_SIZE}
     volumes:
       - ./uploads:/app/uploads
     networks:

@@ -11,3 +11,4 @@ public class HelloController {
         return "Merhaba Reis, Branch üzerinden sourcetree ile pr için güncellendi!";
     }
 }
+

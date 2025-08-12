@@ -1,11 +1,5 @@
 package com.reisfal.falbackend.service;
 
-<<<<<<< HEAD
-import com.reisfal.falbackend.model.User;
-import com.reisfal.falbackend.repository.UserRepository;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-=======
 import com.reisfal.falbackend.model.RefreshToken;
 import com.reisfal.falbackend.model.User;
 import com.reisfal.falbackend.model.dto.LoginResponse;
@@ -22,18 +16,11 @@ import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.UUID;
->>>>>>> recover-2157
 
 @Service
 public class AuthService {
 
     private final UserRepository userRepository;
-<<<<<<< HEAD
-    private final PasswordEncoder passwordEncoder;
-
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-=======
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtTokenProvider jwt;
     private final PasswordEncoder passwordEncoder;
@@ -48,46 +35,20 @@ public class AuthService {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.jwt = jwt;
->>>>>>> recover-2157
         this.passwordEncoder = passwordEncoder;
     }
 
     public String register(String username, String email, String password) {
-<<<<<<< HEAD
-        if (userRepository.findByUsername(username).isPresent()) {
-            throw new RuntimeException("Kullanıcı adı zaten kayıtlı");
-        }
-        if (userRepository.findByEmail(email).isPresent()) {
-            throw new RuntimeException("Email zaten kayıtlı");
-        }
-=======
         if (userRepository.findByUsername(username).isPresent())
             throw new RuntimeException("Kullanıcı adı zaten kayıtlı");
         if (userRepository.findByEmail(email).isPresent())
             throw new RuntimeException("Email zaten kayıtlı");
->>>>>>> recover-2157
 
         User user = new User();
         user.setUsername(username);
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password));
         userRepository.save(user);
-<<<<<<< HEAD
-
-        return "Kullanıcı başarıyla kaydedildi";
-    }
-
-    public User login(String identifier, String password) {
-        User user = userRepository.findByUsername(identifier)
-                .orElse(userRepository.findByEmail(identifier)
-                        .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı")));
-
-        if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new RuntimeException("Şifre yanlış");
-        }
-
-        return user;
-=======
         return "Kullanıcı başarıyla kaydedildi";
     }
 
@@ -124,7 +85,6 @@ public class AuthService {
 
         return new LoginResponse(access, rawRefresh);
     }
-
 
     // REFRESH → DB doğrula, süresi geçmemişse rotate et, yeni ikiliyi dön
     public LoginResponse refresh(String rawRefreshToken, String device) {
@@ -164,6 +124,5 @@ public class AuthService {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
->>>>>>> recover-2157
     }
 }

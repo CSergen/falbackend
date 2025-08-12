@@ -14,6 +14,7 @@ public class JwtTokenProvider {
     private final Key key;
     private final long accessTokenValidity;
     private final long refreshTokenValidity;
+    // JwtTokenProvider.java
 
     public JwtTokenProvider(
             @Value("${jwt.secret}") String secret,
@@ -37,21 +38,7 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-<<<<<<< HEAD
-    public String createRefreshToken(String username) {
-        Date now = new Date();
-        Date validity = new Date(now.getTime() + refreshTokenValidity);
 
-        return Jwts.builder()
-                .setSubject(username)
-                .setIssuedAt(now)
-                .setExpiration(validity)
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
-    }
-=======
-
->>>>>>> recover-2157
 
     public String getUsername(String token) {
         return Jwts.parserBuilder()
