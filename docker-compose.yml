@@ -1,13 +1,12 @@
-version: '3.8'
 
 services:
   postgres:
     image: postgres:15
     container_name: faldb_container
     environment:
-      POSTGRES_DB: ${SPRING_DATASOURCE_DB:-faldb}
-      POSTGRES_USER: ${SPRING_DATASOURCE_USERNAME}
-      POSTGRES_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      POSTGRES_DB: faldb
+      POSTGRES_USER: sergen
+      POSTGRES_PASSWORD: 1234
       TZ: Europe/Istanbul
       PGTZ: Europe/Istanbul
     ports:
@@ -18,7 +17,7 @@ services:
       - fal_network
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${SPRING_DATASOURCE_USERNAME} -d ${SPRING_DATASOURCE_DB:-faldb}"]
+      test: ["CMD-SHELL", "pg_isready -U sergen -d faldb"]
       interval: 5s
       timeout: 3s
       retries: 15
@@ -34,22 +33,10 @@ services:
         condition: service_healthy
     ports:
       - "8080:8080"
-    environment:
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
-      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
-      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
-      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
-
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_ACCESS_EXP_MS: ${JWT_ACCESS_EXP_MS}
-      JWT_REFRESH_EXP_MS: ${JWT_REFRESH_EXP_MS}
-
-      APP_UPLOAD_DIR: ${APP_UPLOAD_DIR}
-      MAX_FILE_SIZE: ${MAX_FILE_SIZE}
-      MAX_REQUEST_SIZE: ${MAX_REQUEST_SIZE}
+    env_file:
+      - .env
     volumes:
-      - ./uploads:/app/uploads
+      - ./uploads:${APP_UPLOAD_DIR:-/app/uploads}
     networks:
       - fal_network
     restart: always

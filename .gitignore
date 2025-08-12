@@ -1,14 +1,26 @@
-# Build çıktıları
+# Build
 target/
 .build/
-*.iml
+
+# IDE
 .idea/
 .vscode/
+*.iml
+.project
+.classpath
+.settings/
 
-# Sırlar ve local config
+# OS
+.DS_Store
+
+# Env & local secrets
 .env
 **/application-local.properties
+bfg.jar
+
+# Runtime data
 uploads/
 postgres_data/
-bfg.jar
-secrets.txt
+
+# Maven wrapper (opsiyonel)
+.mvn/wrapper/maven-wrapper.jar

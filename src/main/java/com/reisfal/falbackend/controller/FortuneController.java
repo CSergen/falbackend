@@ -54,31 +54,53 @@ public class FortuneController {
     }
 
 
-    // Multipart endpoint
     @PostMapping("/fortune")
     public ResponseEntity<?> uploadFortune(
             @RequestParam("image") MultipartFile image,
             @RequestParam("category") int categoryNumber,
             Authentication authentication) throws Exception {
 
+        System.out.println("📩 [UPLOAD] Fortune upload isteği geldi");
+
         FortuneCategory category = mapCategoryFromNumber(categoryNumber);
+        System.out.println("✅ [UPLOAD] Kategori tespit edildi: " + category);
 
         User user = userRepository.findByUsername(authentication.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> {
+                    System.out.println("❌ [UPLOAD] Kullanıcı bulunamadı!");
+                    return new RuntimeException("User not found");
+                });
 
-        String uniqueFileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
+        System.out.println("👤 [UPLOAD] Kullanıcı bulundu: " + user.getUsername());
+
+        String originalName = image.getOriginalFilename();
+        System.out.println("📂 [UPLOAD] Orijinal dosya adı: " + originalName);
+
+        String uniqueFileName = UUID.randomUUID() + "_" + originalName;
         String uploadDir = "/app/uploads/";
         File dir = new File(uploadDir);
-        if (!dir.exists()) dir.mkdirs();
+        if (!dir.exists()) {
+            System.out.println("📁 [UPLOAD] Upload klasörü yok, oluşturuluyor...");
+            dir.mkdirs();
+        }
 
         Path filePath = Paths.get(uploadDir, uniqueFileName);
-        Files.write(filePath, image.getBytes());
+        try {
+            Files.write(filePath, image.getBytes());
+            System.out.println("💾 [UPLOAD] Dosya başarıyla yazıldı: " + filePath.toAbsolutePath());
+        } catch (Exception e) {
+            System.out.println("❌ [UPLOAD] Dosya yazılamadı: " + e.getMessage());
+            throw e;
+        }
 
         String fortuneText;
         try {
-            byte[] imageBytes = Files.readAllBytes(filePath); // 🔥 path yerine byte[] gönderiyoruz
+            byte[] imageBytes = Files.readAllBytes(filePath);
+            System.out.println("🧠 [UPLOAD] AI servisine görsel gönderiliyor...");
             fortuneText = aiService.analyzeImage(imageBytes, category.getDisplayName());
+            System.out.println("✅ [UPLOAD] AI yorumu alındı");
         } catch (Exception e) {
+            System.out.println("❌ [UPLOAD] AI yorumu alınamadı: " + e.getMessage());
             fortuneText = "AI yorumu alınamadı.";
         }
 
@@ -88,10 +110,18 @@ public class FortuneController {
         fortune.setFortuneText(fortuneText);
         fortune.setCreatedAt(LocalDateTime.now().toString());
 
-        fortuneRepository.save(fortune);
+        try {
+            fortuneRepository.save(fortune);
+            System.out.println("💾 [UPLOAD] Fortune veritabanına kaydedildi. ID: " + fortune.getId());
+        } catch (Exception e) {
+            System.out.println("❌ [UPLOAD] Fortune kaydı başarısız: " + e.getMessage());
+            throw e;
+        }
 
+        System.out.println("🎯 [UPLOAD] İşlem tamamlandı, response dönülüyor...");
         return ResponseEntity.ok(fortune);
     }
+
 
     @PostMapping("/api/fal")
     public ResponseEntity<?> analyzeBase64Image(
