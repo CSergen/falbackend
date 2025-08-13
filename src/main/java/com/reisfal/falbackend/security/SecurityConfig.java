@@ -2,6 +2,7 @@ package com.reisfal.falbackend.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -28,20 +29,30 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // CORS preflight
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // Public endpoints
                         .requestMatchers(
                                 "/auth/register",
                                 "/auth/login",
                                 "/auth/refresh",
-                                "/uploads/**",
-                                "/hello" // istersen
+                                "/hello"
                         ).permitAll()
-                        .anyRequest().authenticated()
 
+                        // Statik dosya: resim erişimi
+                        .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
+
+                        // Swagger (opsiyonel)
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+
+                        // Diğer her şey auth ister
+                        .anyRequest().authenticated()
                 )
-                // Form login ve HTTP Basic’i kapatıyoruz
+                // Form login ve HTTP Basic off
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
-                // Bazı header kısıtlamalarını kaldırıyoruz (opsiyonel)
+                // Bazı header kısıtlamalarını gevşetme (opsiyonel)
                 .headers(headers -> headers
                         .frameOptions(frame -> frame.disable())
                         .xssProtection(xss -> xss.disable())
@@ -49,7 +60,6 @@ public class SecurityConfig {
                 );
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-
         return http.build();
     }
 

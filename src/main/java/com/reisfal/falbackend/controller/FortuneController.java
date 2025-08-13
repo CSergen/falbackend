@@ -1,3 +1,4 @@
+// src/main/java/com/reisfal/falbackend/controller/FortuneController.java
 package com.reisfal.falbackend.controller;
 
 import com.reisfal.falbackend.model.Fortune;
@@ -8,6 +9,7 @@ import com.reisfal.falbackend.repository.FortuneRepository;
 import com.reisfal.falbackend.repository.UserRepository;
 import com.reisfal.falbackend.service.AiService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.MediaType;
@@ -33,6 +35,9 @@ public class FortuneController {
     private final UserRepository userRepository;
     private final AiService aiService;
 
+    @Value("${app.upload.dir:/app/uploads}")
+    private String uploadDir;
+
     public FortuneController(FortuneRepository fortuneRepository,
                              UserRepository userRepository,
                              AiService aiService) {
@@ -52,7 +57,6 @@ public class FortuneController {
             default -> FortuneCategory.GENEL;
         };
     }
-
 
     @PostMapping("/fortune")
     public ResponseEntity<?> uploadFortune(
@@ -77,7 +81,7 @@ public class FortuneController {
         System.out.println("📂 [UPLOAD] Orijinal dosya adı: " + originalName);
 
         String uniqueFileName = UUID.randomUUID() + "_" + originalName;
-        String uploadDir = "/app/uploads/";
+
         File dir = new File(uploadDir);
         if (!dir.exists()) {
             System.out.println("📁 [UPLOAD] Upload klasörü yok, oluşturuluyor...");
@@ -122,7 +126,6 @@ public class FortuneController {
         return ResponseEntity.ok(fortune);
     }
 
-
     @PostMapping("/api/fal")
     public ResponseEntity<?> analyzeBase64Image(
             @RequestBody ImageRequest imageRequest,
@@ -137,21 +140,22 @@ public class FortuneController {
             }
 
             if (category == null || category.isEmpty()) {
-                category = "Genel"; // 🔄 fallback
+                category = "Genel";
             }
 
             User user = userRepository.findByUsername(authentication.getName())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Image);
-            String fileName = user.getUsername() + "_" + System.currentTimeMillis() + ".jpg";
-            Path uploadDir = Paths.get("/app/uploads");
-            Files.createDirectories(uploadDir);
-            Path filePath = uploadDir.resolve(fileName);
+            String fileName = user.getUsername() + "_" + java.util.UUID.randomUUID() + ".jpg";
+
+            Path uploadBase = Paths.get(uploadDir);
+            Files.createDirectories(uploadBase);
+            Path filePath = uploadBase.resolve(fileName);
             Files.write(filePath, imageBytes);
             System.out.println("🟢 Base64 görsel kaydedildi: " + filePath.toAbsolutePath());
 
-            String fortuneText = aiService.analyzeImage(imageBytes, category); // ✅ kategori AI'ye gönderiliyor
+            String fortuneText = aiService.analyzeImage(imageBytes, category);
 
             Fortune fortune = new Fortune();
             fortune.setUser(user);
@@ -168,8 +172,6 @@ public class FortuneController {
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
         }
     }
-
-
 
     @GetMapping("/fortunes")
     public ResponseEntity<?> getUserFortunes(Authentication authentication, HttpServletRequest request) {
@@ -190,7 +192,7 @@ public class FortuneController {
 
     @GetMapping("/uploads/{filename}")
     public ResponseEntity<Resource> serveFile(@PathVariable String filename) throws IOException {
-        Path file = Paths.get("/app/uploads").resolve(filename);
+        Path file = Paths.get(uploadDir).resolve(filename);
         Resource resource = new UrlResource(file.toUri());
 
         String contentType = Files.probeContentType(file);
