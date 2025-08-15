@@ -1,34 +1,38 @@
 package com.reisfal.falbackend.config;
 
+import java.util.Arrays;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 public class CorsConfig {
 
+    // application*.properties veya .env üzerinden gelir
+    @Value("${cors.allowed-origins:*}")
+    private String allowedOrigins;
+
     @Bean
-    public WebMvcConfigurer corsConfigurer() {
-        return new WebMvcConfigurer() {
-            @Override
-            public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**")
-                        // Domain yoksa sadece IP ve local geliştirme için açıyoruz
-                        .allowedOriginPatterns(
-                                "http://localhost:*",
-                                "http://127.0.0.1:*",
-                                "http://10.0.2.2:*",   // Android emulator
-                                "http://192.168.*:*",  // Aynı Wi‑Fi’daki cihazlar
-                                "http://13.60.172.6",        // <- EC2 IP'n (80/443)
-                                "http://13.60.172.6:8080"    // <- 8080'dan erişiyorsan
-                        )
-                        .allowedMethods("GET","POST","PUT","PATCH","DELETE","OPTIONS")
-                        .allowedHeaders("*")
-                        .exposedHeaders("Authorization","Content-Type")
-                        .allowCredentials(true)
-                        .maxAge(3600);
-            }
-        };
+    public CorsConfigurationSource corsConfigurationSource() {
+        var config = new CorsConfiguration();
+
+        // Virgülle ayrılmış listeden besle
+        if (allowedOrigins != null && !allowedOrigins.isBlank()) {
+            config.setAllowedOrigins(Arrays.stream(allowedOrigins.split(","))
+                    .map(String::trim).toList());
+        } else {
+            config.addAllowedOriginPattern("*");
+        }
+
+        config.setAllowedMethods(Arrays.asList("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
+        config.setAllowedHeaders(Arrays.asList("Authorization","Content-Type","Accept","Origin"));
+        config.setAllowCredentials(false); // Token header'ı ile çalıştığımız için false yeterli
+
+        var source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 }

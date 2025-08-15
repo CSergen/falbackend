@@ -2,6 +2,8 @@ package com.reisfal.falbackend.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.reisfal.falbackend.model.enums.FortuneCategory;
 
 @Entity
 @Table(name = "fortunes")
@@ -17,7 +19,12 @@ public class Fortune {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore // JSON'a user sokma
     private User user;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private FortuneCategory category = FortuneCategory.GENEL; // 👈 EKLENDİ
 
     @Column(nullable = false)
     private String imageUrl;
@@ -26,5 +33,5 @@ public class Fortune {
     private String fortuneText;
 
     @Column(nullable = false)
-    private String createdAt;
+    private String createdAt; // (opsiyonel: Instant yapabilirsin)
 }

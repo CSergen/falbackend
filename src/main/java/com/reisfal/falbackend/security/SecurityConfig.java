@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -25,9 +26,8 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> {}) // CorsConfig devrede
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .cors(Customizer.withDefaults()) // CorsConfig bean'i devrede
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // CORS preflight
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
@@ -49,10 +49,8 @@ public class SecurityConfig {
                         // Diğer her şey auth ister
                         .anyRequest().authenticated()
                 )
-                // Form login ve HTTP Basic off
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
-                // Bazı header kısıtlamalarını gevşetme (opsiyonel)
                 .headers(headers -> headers
                         .frameOptions(frame -> frame.disable())
                         .xssProtection(xss -> xss.disable())

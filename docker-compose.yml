@@ -1,4 +1,3 @@
-
 services:
   postgres:
     image: postgres:15
@@ -10,7 +9,7 @@ services:
       TZ: Europe/Istanbul
       PGTZ: Europe/Istanbul
     ports:
-      - "5432:5432"
+      - "127.0.0.1:54320:5432"   # dış dünyaya kapalı (sadece sunucu içi)
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -35,6 +34,9 @@ services:
       - "8080:8080"
     env_file:
       - .env
+    environment:
+      # CORS izinleri .env’den gelmiyorsa buradan da set edebilirsin
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-*}
     volumes:
       - ./uploads:${APP_UPLOAD_DIR:-/app/uploads}
     networks:
